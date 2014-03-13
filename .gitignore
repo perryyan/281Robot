@@ -16,3 +16,10 @@
 *.exe
 *.out
 *.app
+
+# CrossIDE objects
+*.asm
+*.lkr
+*.lst
+*.map
+*.obj
