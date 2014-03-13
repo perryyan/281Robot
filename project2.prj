@@ -1,0 +1,40 @@
+<PRJ>
+     `project2.prj` `C:\Users\Perry\Documents\GitHub\281Robot\project2.prj`
+     `c:\crosside\examples\sdccsmall.bat` `ld "%pathne%" %obj%`
+     `C:\CrossIDE\Call51\Bin\c51.exe` ``
+     `C:\CrossIDE\Call51\Bin\a51.exe` ``
+     41
+</PRJ>
+
+Source Files
+<C>
+`hex_display.c` `C:\Users\Perry\Documents\GitHub\281Robot\hex_display.c`
+   `c:\crosside\examples\sdccsmall.bat` `cc "%pathne%"`
+   `` ``
+   `` ``
+   0
+`main.c` `C:\Users\Perry\Documents\GitHub\281Robot\main.c`
+   `c:\crosside\examples\sdccsmall.bat` `cc "%pathne%"`
+   `` ``
+   `` ``
+   0
+`spi.c` `C:\Users\Perry\Documents\GitHub\281Robot\spi.c`
+   `c:\crosside\examples\sdccsmall.bat` `cc "%pathne%"`
+   `` ``
+   `` ``
+   0
+</C>
+
+Header Files
+<H>
+`main.h` `C:\Users\Perry\Documents\GitHub\281Robot\main.h`
+   `` ``
+   `` ``
+   `` ``
+   0
+</H>
+
+Resource Files
+<R>
+</R>
+
