@@ -4,7 +4,7 @@
 #define CLK 22118400L
 #define BAUD 115200L 
 #define BRG_VAL (0x100-(CLK/(32L*BAUD)))
-#define FREQ 10000L
+#define FREQ 15600L
 #define TIMER_2_RELOAD (0x10000L-(CLK/(32L*BAUD)))
 #define TIMER0_RELOAD_VALUE (65536L-(CLK/(12L*FREQ)))
 #define DISTANCE 0.750000L
@@ -12,7 +12,7 @@
 #define UP 4.999999999L
 #define DOWN 1024.0000000000L
 #define ERROR 0.0400000L
-#define FIFTY 0.500000L
+#define FIFTY 0.500000L //these need to be fixed
 #define THIRTYFIVE 0.350000L
 #define TWENTY 0.200000L
 #define TEN 0.100000L
@@ -25,16 +25,16 @@ volatile unsigned char pwm2;
 volatile unsigned char pwm3;
 volatile unsigned char pwm4;
 
-int txon;
+//int txon;
 float voltage;
 char channel;
 float v0;
 float v1;
 int min = MIN;
-unsigned char moveback;
-unsigned char moveforward;
-unsigned char turn180;
-unsigned char parallel;
+unsigned char moveback = 000000010;
+unsigned char moveforward = 00000001;
+unsigned char turn180 = 00000011;
+unsigned char parallel = 00000100;
 unsigned char val;
 void wait_bit_time(void);
 void wait_one_and_half_bit_time(void);
@@ -47,12 +47,12 @@ void stop(void);
 void turn180s(void);
 void parallels(void);
 
-float d1 = FIFTY;
-float d2 = THIRTYFIVE;
-float d3 = TWENTY;
-float d4 = TEN;
+float d1 = 0.42;
+float d2 = 0.785;
+float d3 = 1.92;
+float d4 = 3.2;
 
-float distance = TWENTY;
+float distance = 1.92;
 
 //void InitTimer0 ( void );
 
@@ -119,7 +119,7 @@ void pwmcounterz ( void ) interrupt 1
 	P3_5=(pwm4>pwmcount)?1:0;
 
 }
-
+/*
 void delay( void )
 {
 	unsigned int a,b,c,d,e,f,g;
@@ -132,6 +132,7 @@ void delay( void )
 							for( g = 0; g < 10000; g++);
 
 }
+*/
 
 //for the transmission in the remote
 
@@ -294,7 +295,7 @@ void turn_right(void)
 			pwm3 = 0;
 			pwm4 = 0;
 		//}	
-		if (GetADC(0) >= (DISTANCE - ERROR) && GetADC(0) < (DISTANCE + ERROR) && GetADC(1) < (DISTANCE + ERROR) && GetADC(1) >= (DISTANCE - ERROR)) 
+		if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR))
 		{
 			InitTimer0();
 			pwm1 = 0;
@@ -332,50 +333,52 @@ void main(void) //add in errors??
 	
   while(1)
   {
-	v0 = GetADC(0);
-	v1 = GetADC(1);
+	v0 = (GetADC(0)*(UP/DOWN));
+	v1 = (GetADC(1)*(UP/DOWN));
+	//printf("v0 = %.6f, v1 = %.6f \n",v0,v1);
 	
 	if (v0 < min )
 	 {  
 	 	rx_byte(min);
+	 	printf("Last Command = %u \n",val);
 	 	
 	 	if (val == moveforward)
 	 	{
-	 	 if ( distance == d1 )
+	 	 if ( distance >= (d1 - ERROR) || distance <= (d1 +ERROR) )
 	 	  {
 	 	  	distance = d1;
 	 	  }
-	 	  if ( distance == d2 )
+	 	  if ( distance >= (d2 - ERROR) || distance <= (d2 +ERROR) )
 	 	  {
 	 	  	distance = d1;
 	 	  }
-	 	  if ( distance == d3 )
+	 	  if ( distance >= (d3 - ERROR) || distance <= (d3 +ERROR) )
 	 	  {
 	 	  	distance = d2;
 	 	  }
-	 	  if ( distance == d4 )
+	 	  if ( distance >= (d4 - ERROR) || distance <= (d4 +ERROR) )
 	 	  {
 	 	  	distance = d3;
 	 	  }
 	 	} 
 	 	if( val == moveback )
 	 	 {
-	 	  if ( distance == d1 )
+	 	  if ( distance >= (d1 - ERROR) || distance <= (d1 +ERROR) )
 	 	  	{
 	 	  	distance = d2;
 	 	 
 	 	  	} 
-	 	  	if ( distance == d2 )
+	 	  	if ( distance >= (d2 - ERROR) || distance <= (d2 +ERROR) )
 	 	  	{
 	 	  	distance = d3;
 	 	 
 	 	  	} 
-	 	  	if ( distance == d3 )
+	 	  	if ( distance >= (d3 - ERROR) || distance <= (d3 +ERROR) )
 	 	  	{
 	 	  	distance = d4;
 	 	 
 	 	  	}
-	 	  	 if ( distance == d4 )
+	 	  	 if ( distance >= (d4 - ERROR) || distance <= (d4 +ERROR) )
 	 	  	{
 	 	  	distance = d4;
 	 	 
@@ -394,15 +397,15 @@ void main(void) //add in errors??
 
 	if (v0 == v1)
 	{
-		if (v0&&v1 > distance)
+		if (v0&&v1 > (distance - ERROR))
 		{
 		move_closer();
 		}
-		if (v0&&v1 < distance)
+		if (v0&&v1 < (distance + ERROR))
 		{
 		move_further();
 		}
-		if (v0&&v1 == distance)
+		if (v0&&v1 == (distance +ERROR) || v0&&v1 == (distance - ERROR) )
 		{
 		stop();
 		}
