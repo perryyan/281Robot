@@ -1,12 +1,10 @@
 #include <stdio.h>
-#include <rohit.h>
+#include <at89lp51rd2.h>
 
 #define CLK 22118400L
 #define BAUD 115200L 
 #define BRG_VAL (0x100-(CLK/(32L*BAUD)))
-#define FREQ 15600L
 #define TIMER_2_RELOAD (0x10000L-(CLK/(32L*BAUD)))
-#define TIMER0_RELOAD_VALUE (65536L-(CLK/(12L*FREQ)))
 #define DISTANCE 0.750000L
 #define ZERO 0.00000L
 #define UP 4.999999999L
@@ -17,13 +15,6 @@
 #define TWENTY 0.200000L
 #define TEN 0.100000L
 #define MIN 0.380000L
-
-
-volatile unsigned char pwmcount;
-volatile unsigned char pwm1;
-volatile unsigned char pwm2;
-volatile unsigned char pwm3;
-volatile unsigned char pwm4;
 
 //int txon;
 float voltage;
@@ -77,81 +68,17 @@ unsigned char _c51_external_startup(void)
     BDRCON=0;
     BRL=BRG_VAL;
     BDRCON=BRR|TBCK|RBCK|SPD;
-    
-    // Initialize timer 0 for ISR 'pwmcounter()' below
-	TR0=0; // Stop timer 0
-	TMOD=0x01; // 16-bit timer
-	TH0=TIMER0_RELOAD_VALUE/0x100;
-	TL0=TIMER0_RELOAD_VALUE%0x100;
-	TR0=1; // Start timer 0 (bit 4 in TCON)
-	ET0=1; // Enable timer 0 interrupt
-	EA=1;  // Enable global interrupts
    
-	pwmcount = 0;
 	   
   	return 0;
     
     
 }
 
-void InitTimer0 (void)
-{ 
-	// Initialize timer 0 for ISR 'pwmcounter()' below
-	TR0=0; // Stop timer 0
-	TMOD=0x01; // 16-bit timer
-	// Use the autoreload feature available in the AT89LP51RB2
-	// WARNING: There was an error in at89lp51rd2.h that prevents the
-	// autoreload feature to work.  Please download a newer at89lp51rd2.h
-	// file and copy it to the crosside\call51\include folder.
-	TH0=TIMER0_RELOAD_VALUE/0x100;
-	TL0=TIMER0_RELOAD_VALUE%0x100;
-	TR0=1; // Start timer 0 (bit 4 in TCON)
-	ET0=1; // Enable timer 0 interrupt
-	EA=1;  // Enable global interrupts
-}
 
-void pwmcounterz ( void ) interrupt 1
-{
-	if(++pwmcount>99) pwmcount=0;
-	P3_2=(pwm1>pwmcount)?1:0;
-	P3_3=(pwm2>pwmcount)?1:0;
-	P3_4=(pwm3>pwmcount)?1:0;
-	P3_5=(pwm4>pwmcount)?1:0;
 
-}
-/*
-void delay( void )
-{
-	unsigned int a,b,c,d,e,f,g;
-	for( a = 0; a < 10000; a++);
-		for( b = 0; b < 10000; b++);
-			for( c = 0; c < 10000; c++);
-				for( d = 0; d < 10000; d++);
-					for( e = 0; e < 10000; e++);
-						for( f = 0; f < 10000; f++);
-							for( g = 0; g < 10000; g++);
 
-}
-*/
 
-//for the transmission in the remote
-
-/*void tx_byte ( unsigned char val )
-{
-	unsigned char j;
-	//Send the start bit
-	txon=0;
-	wait_bit_time();
-	for (j=0; j<8; j++)
-	{
-		txon=val&(0x01<<j)?1:0;
-		wait_bit_time();
-	}
-	txon=1;
-	//Send the stop bits
-	wait_bit_time();
-	wait_bit_time();
-}*/
 
 //for the reception in the car
 
@@ -235,91 +162,25 @@ float findvoltage1( void )
 {
 	return (float) (GetADC(1)*(UP/DOWN));
 }
-void same ( void )
-{
-	if( findvoltage0() < ( findvoltage1() + ERROR ) && findvoltage0() > ( findvoltage1() - ERROR )  )
-	{
-		if( findvoltage0() < (DISTANCE - ERROR) && findvoltage1() < (DISTANCE - ERROR) )
-				{
-						InitTimer0();
-						pwm1 = 0;
-						pwm2 = 100;
-						pwm3 = 100;
-						pwm4 = 0;
-				}
-					 if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR)) 
-					{
-						InitTimer0();
-						pwm1 = 0;
-						pwm2 = 0;
-						pwm3 = 0;
-						pwm4 = 0;
-					}
-				}
-	    if( findvoltage0() > (DISTANCE + ERROR) && findvoltage1() > (DISTANCE + ERROR) )
-				{
-						InitTimer0();
-						pwm1 = 100;
-						pwm2 = 0;
-						pwm3 = 0;
-						pwm4 = 100;		
-				}
-				if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR)) 
-					{
-						InitTimer0();
-						pwm1 = 0;
-						pwm2 = 0;
-						pwm3 = 0;
-						pwm4 = 0;
-					}
-}
 
 void turn_right(void)
 {	
-	//if( GetADC(0) > ( GetADC(1) + ERROR ) || GetADC(0) < ( GetADC(1) - ERROR ))
-	
-		//if( GetADC(0) > ( GetADC(1) + ERROR ) )
-		//{			
-			InitTimer0();
-			pwm1 = 100;
-			pwm2 = 0;
-			pwm3 = 0;
-			pwm4 = 0;
-		//}	
-		if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR))
+//		if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR))
 		{
-			InitTimer0();
-			pwm1 = 0;
-			pwm2 = 0;
-			pwm3 = 0;
-			pwm4 = 0;
+			//turn right
 		}
-					
-	
 }
 
 void turn_left(void)
 {
-			
-			InitTimer0();
-			pwm1 = 0;
-			pwm2 = 0;
-			pwm3 = 0;
-			pwm4 = 100;
-		
-		
-		if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR)) 
+//		if (findvoltage0() >= (DISTANCE - ERROR) && findvoltage0() < (DISTANCE + ERROR) && findvoltage1() < (DISTANCE + ERROR) && findvoltage1() >= (DISTANCE - ERROR)) 
 		{
-			InitTimer0();
-			pwm1 = 0;
-			pwm2 = 0;
-			pwm3 = 0;
-			pwm4 = 0;
+			//turn left
 		}
 			
 }
 
-void main(void) //add in errors??
+void main(void)
 {
 	
   while(1)
@@ -327,11 +188,12 @@ void main(void) //add in errors??
 	v0 = (GetADC(0)*(UP/DOWN));
 	v1 = (GetADC(1)*(UP/DOWN));
 	//printf("v0 = %.6f, v1 = %.6f \n",v0,v1);
-	
+	printf("Last Command = %u \n",val);
 	if (v0 < min )
 	 {  
+
 	 	rx_byte(min);
-	 	printf("Last Command = %u \n",val);
+	 	
 	 	
 	 	if (val == moveforward)
 	 	{
@@ -385,28 +247,17 @@ void main(void) //add in errors??
 }
 void move_closer(void)
 {
-	pwm1 = 100;
-	pwm2 = 0;
-	pwm3 = 100;
-	pwm4 = 0;
-		
+	//move closer
 }
 
 void move_further(void)
 {
- 	pwm1 = 0;
- 	pwm2 = 100;
- 	pwm3 = 0;
- 	pwm4 = 100;
-	
+	//move farther	
 }
 
 void stop(void)
 {
-	pwm1 = 0;
- 	pwm2 = 0;
- 	pwm3 = 0;
- 	pwm4 = 0;
+	//stop
 }	
 
 void turn180s(void)
