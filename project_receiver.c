@@ -174,8 +174,6 @@ unsigned char rx_byte ( int min )
 	wait_one_and_half_bit_time();
 	return val;
 }
-
-
 void wait_bit_time(void)
 {
 	_asm	
@@ -188,8 +186,6 @@ void wait_bit_time(void)
 	    ret
     _endasm;    
 }
-
-
 void wait_one_and_half_bit_time(void)
 {
 	_asm	
@@ -202,14 +198,12 @@ void wait_one_and_half_bit_time(void)
 	    ret
     _endasm;    
 }
-
 void SPIWrite(unsigned char value)
 {
 	SPSTA&=(~SPIF); // Clear the SPIF flag in SPSTA
 	SPDAT=value;
 	while((SPSTA & SPIF)!=SPIF); //Wait for transmission to end
 }
-
 unsigned int GetADC(unsigned char channel)
 {
 	unsigned int adc;
@@ -231,19 +225,16 @@ unsigned int GetADC(unsigned char channel)
 		
 	return adc;
 }
-
 //get the volatage from ch0 in ADC and change it accordingly.
 float findvoltage0( void )
 {
 	return (float) (GetADC(0)*(UP/DOWN));
 }
-	
 //gets the volatage from ch1 in ADC and changes accordingly	
 float findvoltage1( void )
 {
 	return (float) (GetADC(1)*(UP/DOWN));
 }
-
 void same ( void )
 {
 	if( findvoltage0() < ( findvoltage1() + ERROR ) && findvoltage0() > ( findvoltage1() - ERROR )  )
@@ -344,83 +335,51 @@ void main(void) //add in errors??
 	 	
 	 	if (val == moveforward)
 	 	{
-	 	 if ( distance >= (d1 - ERROR) || distance <= (d1 +ERROR) )
-	 	  {
-	 	  	distance = d1;
-	 	  }
-	 	  if ( distance >= (d2 - ERROR) || distance <= (d2 +ERROR) )
-	 	  {
-	 	  	distance = d1;
-	 	  }
-	 	  if ( distance >= (d3 - ERROR) || distance <= (d3 +ERROR) )
-	 	  {
-	 	  	distance = d2;
-	 	  }
-	 	  if ( distance >= (d4 - ERROR) || distance <= (d4 +ERROR) )
-	 	  {
-	 	  	distance = d3;
-	 	  }
+	 		if ( distance >= (d1 - ERROR) || distance <= (d1 +ERROR) )
+	 	  		distance = d1;
+	 		if ( distance >= (d2 - ERROR) || distance <= (d2 +ERROR) )
+		 	  	distance = d1;
+	 		if ( distance >= (d3 - ERROR) || distance <= (d3 +ERROR) )
+		 	  	distance = d2;
+	 		if ( distance >= (d4 - ERROR) || distance <= (d4 +ERROR) )
+		 	  	distance = d3;
 	 	} 
+
 	 	if( val == moveback )
 	 	 {
-	 	  if ( distance >= (d1 - ERROR) || distance <= (d1 +ERROR) )
-	 	  	{
-	 	  	distance = d2;
-	 	 
-	 	  	} 
+	 		if ( distance >= (d1 - ERROR) || distance <= (d1 +ERROR) )
+	 			distance = d2;
 	 	  	if ( distance >= (d2 - ERROR) || distance <= (d2 +ERROR) )
-	 	  	{
-	 	  	distance = d3;
-	 	 
-	 	  	} 
+	 	  		distance = d3;
 	 	  	if ( distance >= (d3 - ERROR) || distance <= (d3 +ERROR) )
-	 	  	{
-	 	  	distance = d4;
-	 	 
-	 	  	}
-	 	  	 if ( distance >= (d4 - ERROR) || distance <= (d4 +ERROR) )
-	 	  	{
-	 	  	distance = d4;
-	 	 
-	 	  	}
+	 	  		distance = d4;
+	 	  	if ( distance >= (d4 - ERROR) || distance <= (d4 +ERROR) )
+	 	  		distance = d4;
 	 	  }	
+
 	 	  if (val == turn180)
-	 	  	{
 	 			turn180s();
-	 		}
 	 	  if (val == parallel)
-	 	    {
 	 	    	parallels();
-	 	    }
 	 	    	
 	}
 
 	if (v0 == v1)
 	{
 		if (v0&&v1 > (distance - ERROR))
-		{
-		move_closer();
-		}
+			move_closer();
 		if (v0&&v1 < (distance + ERROR))
-		{
-		move_further();
-		}
+			move_further();
 		if (v0&&v1 == (distance +ERROR) || v0&&v1 == (distance - ERROR) )
-		{
-		stop();
-		}
+			stop();
 		
 	}
 	
 	if (v0 > v1)
-	{
 	   turn_left();
-	}
 	
 	if (v0 < v1)
-	{
-	   turn_right();	
-	}
+	   turn_right();
    
 }  	
 }
