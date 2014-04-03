@@ -15,7 +15,7 @@
 #define TIMER1_RELOAD_VALUE (65536L-(CLK/(12L*FREQ1)))
 #define TIMER_2_RELOAD (0x10000L-(CLK/(32L*BAUD)))
 
-#define BATTERY 5.33
+#define BATTERY 5.16
 #define BATTERY_MULTIPLIER (36000/(BATTERY*95/100)/(BATTERY*95/100)/1000)
 
           //communicator definitions
@@ -36,12 +36,12 @@ char accelerationvalue[10];
 float voltage;
 char channel;
 int min;
-unsigned char moveback = 0b000000011;
-unsigned char moveforward = 0b00100001;
-unsigned char turn180 = 0b00011101;
-unsigned char parallel = 0b00111111;
+unsigned char moveback = 0b000011101;//29
+unsigned char turn180 = 0b00111111;//63
+unsigned char moveforward = 0b00000011;//3
+unsigned char parallel = 0b00100001;//33
 unsigned char val;
-float volts0,volts1;
+float volts0=0,volts1=0;
 void wait_bit_time(void);
 void wait_one_and_half_bit_time(void);
 unsigned int GetADC(unsigned char channel);
@@ -53,12 +53,13 @@ void stop(void);
 void turn180s(void);
 void parallels(void);
 
-float d1 = 600;
-float d2 = 600;
-float d3 = 600;
-float d4 = 600;
+float d1 = 500;
+float d2 = 350;
+float d3 = 200;
+float d4 = 100;
 
-float distance = 600;
+float distance = 500;
+
 
 //RECEIVER CODE END
 
@@ -84,7 +85,7 @@ unsigned char _c51_external_startup(void)
 	// Initialize timer 0 for ISR 'pwmcounter()' below
 	TR0=0; // Stop timer 0
 	TR1=0;
-	TMOD=0x11; // 16-bit timer (also timer 1, otherwise = 0x01)
+	TMOD=0x01; // 16-bit timer (also timer 1, otherwise = 0x01)
 	// Use the autoreload feature available in the AT89LP51RB2
 	// WARNING: There was an ERROR in at89lp51rd2.h that prevents the
 	// autoreload feature to work.  Please download a newer at89lp51rd2.h
@@ -108,14 +109,18 @@ unsigned char _c51_external_startup(void)
 }
 
 //RECEIVER CODE
-unsigned char rx_byte ( int min )
+unsigned char rx_byte (void)
 {
-	unsigned char j, val;
+	unsigned char j;
 	int volt_zero;
+	
+	while(GetADC(0)<=min);
+	wait_bit_time();
+	wait_bit_time();
 
 	//Skip the start bit
 	val=0;
-	wait_one_and_half_bit_time();
+	//wait_one_and_half_bit_time();
 	for(j=0; j<8; j++)
 	{
 		volt_zero = GetADC(0);
@@ -123,8 +128,6 @@ unsigned char rx_byte ( int min )
 		wait_bit_time();
 		
 	}
-	//Wait for stop bits
-	wait_one_and_half_bit_time();
 	//printf("Last Command = %u \n",val);
 	return val;
 }
@@ -133,7 +136,7 @@ void wait_bit_time(void)
 	_asm	
 	    mov R2, #20
 	L3:	mov R1, #30
-	L2:	mov R0, #22
+	L2:	mov R0, #20
 	L1:	djnz R0, L1 ; 2 machine cycles-> 2*0.5425347us*22=23.9us
 	    djnz R1, L2 ; 23.9us*30=717us
 	    djnz R2, L3 ; 717us*2=1.434ms
@@ -179,7 +182,17 @@ unsigned int GetADC(unsigned char channel)
 		
 	return adc;
 }
-
+/*//get the volatage from ch0 in ADC and change it accordingly.
+float findvoltage0( void )
+{
+	return (float) (GetADC(0)*(UP/DOWN));
+}	
+//gets the volatage from ch1 in ADC and changes accordingly	
+float findvoltage1( void )
+{
+	return (float) (GetADC(1)*(UP/DOWN));
+}
+*/
 //RECEIVER CODE END
 
 void millisecdelay(float millisecondstodelay,char stopautomatically,char batterydependent)
@@ -505,6 +518,7 @@ void honkbuzz(void)
 
 void buttoncommands(void)
 {	 	
+	
 	if(val == moveforward)
 	{
 		if(distance==d1)
@@ -515,6 +529,7 @@ void buttoncommands(void)
 	 	  	distance = d2;
 	 	if(distance==d4)
 	 	  	distance = d3;
+		printf("\x1B[9;1H\x1B[0Kbutton1 pushed");
 	} 
 	else if(val == moveback)
 	{
@@ -526,43 +541,68 @@ void buttoncommands(void)
 	 	  	distance = d4;
 	 	if(distance==d4)
 	 	  	distance = d4;
+		printf("\x1B[9;1H\x1B[0Kbutton2 pushed");
 	}	
 	else if (val == turn180)
+	{
+		TR0 = 1;
+		printf("\x1B[9;1H\x1B[0Kbutton3 pushed");
 	 	rotatedegreescw50(180);
+		TR0 = 0;
+	}
 	else if (val == parallel)
+	{
+		TR0 = 1;
+		printf("\x1B[9;1H\x1B[0Kbutton4 pushed");
 		parallelpark1();
+		TR0 = 0;
+	}
 	 	    	
 }
 void fixposition(float difference,int ERROR)
 {
-	if(difference<20)//if pretty much facing the remote
+	char i;
+	TR0 = 1;
+	
+	if(((volts0<distance/5&&difference>40)||difference>15)&&volts0>volts1)
+		motorcontrol(7,70,0,0);
+	else if(((volts0<distance/5&&difference>40)||difference>15)&&volts1>volts0)
+		motorcontrol(8,70,0,0);
+	else if(difference<15)//if pretty much facing the remote
 	{	if(volts0>distance+ERROR)//if too close
-		{	millisecdelay(300,1,1);
-			motorcontrol(2,70,0,70);
-			while(motormode);
-		}	
+			motorcontrol(2,70,0,0);
 		else if(volts0<distance-ERROR)//if too far
-		{	millisecdelay(300,1,1);
-			motorcontrol(1,70,0,70);
-			while(motormode);
-		}
-		printf("\x1B[2;1Hsmalldifference\x1B[2K");
+			motorcontrol(1,70,0,90);
+		else
+			motormode = 0;
 	}
+
+	/*
 	else if((volts0>volts1)&&volts0>distance+ERROR)//if left is closer and car is too close
 	{	motorcontrol(11,70,70,0);
-		millisecdelay(300,0,1);		}
+		
+		printf("\x1B[3;1H\x1B[0Kgo back right");	}
 	else if((volts0>volts1)&&volts0<distance-ERROR)//left closer and car too far
 	{	motorcontrol(10,70,70,0);
-		millisecdelay(300,0,1);		}
+		
+		printf("\x1B[3;1H\x1B[0Kgo forward left");	}
 	else if((volts1>volts0)&&volts1>distance+ERROR)//right closer and car too close
 	{	motorcontrol(12,70,70,0);
-		millisecdelay(300,0,1);		}
+		
+		printf("\x1B[3;1H\x1B[0Kgo back left");	}
 	else if((volts1>volts0)&&volts1<distance+ERROR)//right closer and car too far
 	{	motorcontrol(9,70,70,0);
-		millisecdelay(300,0,1);		}
-	motormode = 0;
+		
+		printf("\x1B[3;1H\x1B[0Kgo forward right");	}
 
+	*/
+	else
+		motormode = 0;
+	for(i = 0;i<100;i++)
+		if(GetADC(0)<min)
+			return;
 
+	TR0 = 0;
 
 
 
@@ -574,27 +614,29 @@ void main (void)
 	float difference;
 	printf("\x1B[2J");//clears screen
 	printf( "Project 2 Motor Control Running...\n" );
-	TR0=1;
+	TR0=0;
 	
 
 	while(1)
 	{
-		volts0 = GetADC(0);
-		volts1 = GetADC(1);
-		min = 0;
-		if (volts0 <= min )
-		{	rx_byte(min);
+		min = 5;
+		if (GetADC(0) <= min )
+		{	rx_byte();
+		printf("\x1B[6;1H\x1B[0Kval = %d",val);
 			buttoncommands();
 		}
 		else
 		{
+			volts0 = GetADC(0);
+			volts1 = (GetADC(1)+15)*0.9;
 			if(volts0>volts1)
-				difference = (volts0 - volts1)/(volts1+volts0);
+				difference = (volts0 - volts1)/(volts1+volts0)*100;
 			else
-				difference = (volts1 - volts0)/(volts1+volts0);
+				difference = (volts1 - volts0)/(volts1+volts0)*100;
 			
 
-			fixposition(difference,0.0400000L/volts0);
+			fixposition(difference,10);
+			printf("\x1B[2;1H%%difference = %.2f\x1B[4;1Hv0 = \x1B[0K%.2f\x1B[5;1Hv1 = \x1B[0K%.2f",difference,volts0,volts1);
 		}
 
 
