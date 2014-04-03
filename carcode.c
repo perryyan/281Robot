@@ -21,7 +21,6 @@
           //communicator definitions
 //#define UP 4.999999999L
 //#define DOWN 1024.0000000000L
-#define ERROR 0.0400000L
 
 
 //These variables are used in the ISR
@@ -37,10 +36,10 @@ char accelerationvalue[10];
 float voltage;
 char channel;
 int min;
-unsigned char moveback = 0b000000010;
-unsigned char moveforward = 0b00000001;
-unsigned char turn180 = 0b00000011;
-unsigned char parallel = 0b00000100;
+unsigned char moveback = 0b000000011;
+unsigned char moveforward = 0b00100001;
+unsigned char turn180 = 0b00011101;
+unsigned char parallel = 0b00111111;
 unsigned char val;
 float volts0,volts1;
 void wait_bit_time(void);
@@ -54,12 +53,12 @@ void stop(void);
 void turn180s(void);
 void parallels(void);
 
-float d1 = 0.42;
-float d2 = 0.785;
-float d3 = 1.92;
-float d4 = 3.2;
+float d1 = 600;
+float d2 = 600;
+float d3 = 600;
+float d4 = 600;
 
-float distance = 1.92;
+float distance = 600;
 
 //RECEIVER CODE END
 
@@ -544,7 +543,7 @@ void buttoncommands(void)
 		parallelpark1();
 	 	    	
 }
-void fixposition(float difference)
+void fixposition(float difference,int ERROR)
 {
 	if(difference<20)//if pretty much facing the remote
 	{	if(volts0>distance+ERROR)//if too close
@@ -557,6 +556,7 @@ void fixposition(float difference)
 			motorcontrol(1,70,0,70);
 			while(motormode);
 		}
+		printf("\x1B[2;1Hsmalldifference\x1B[2K");
 	}
 	else if((volts0>volts1)&&volts0>distance+ERROR)//if left is closer and car is too close
 	{	motorcontrol(11,70,70,0);
@@ -570,6 +570,7 @@ void fixposition(float difference)
 	else if((volts1>volts0)&&volts1<distance+ERROR)//right closer and car too far
 	{	motorcontrol(9,70,70,0);
 		millisecdelay(300,0,1);		}
+	motormode = 0;
 
 
 
@@ -584,7 +585,6 @@ void main (void)
 	printf("\x1B[2J");//clears screen
 	printf( "Project 2 Motor Control Running...\n" );
 	TR0=1;
-	TR1=1;
 	
 
 	while(1)
@@ -596,33 +596,25 @@ void main (void)
 		{	rx_byte(min);
 			buttoncommands();
 		}
-
-		if(volts0>volts1)
-			difference = (volts0 - volts1)/(volts1+volts0);
 		else
-			difference = (volts1 - volts0)/(volts1+volts0);
+		{
+			if(volts0>volts1)
+				difference = (volts0 - volts1)/(volts1+volts0);
+			else
+				difference = (volts1 - volts0)/(volts1+volts0);
+			
 
-		fixposition(difference);
+			fixposition(difference,0.0400000L/volts0);
+		}
 
 
-
-		millisecdelay(1500,0,0);
-
-
-		rotatedegreescw50(180);
-		errorbuzz();
 		
-
-		millisecdelay(300,0,0);
-		rotatedegreescw100(180);
-		honkbuzz();
-		scalebuzz(100);
-		//rotatedegreescw100(180);
+		
 
 
 		
 
-		while(1);
+		
 
 
 
