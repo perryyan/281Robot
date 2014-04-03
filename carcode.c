@@ -19,16 +19,9 @@
 #define BATTERY_MULTIPLIER (36000/(BATTERY*95/100)/(BATTERY*95/100)/1000)
 
           //communicator definitions
-#define DISTANCE 0.750000L
-#define ZERO 0.00000L
-#define UP 4.999999999L
-#define DOWN 1024.0000000000L
+//#define UP 4.999999999L
+//#define DOWN 1024.0000000000L
 #define ERROR 0.0400000L
-#define FIFTY 50.000000L //these need to be fixed
-#define THIRTYFIVE 35.000000L
-#define TWENTY 20.000000L
-#define TEN 10.000000L
-#define MIN 0.000000L
 
 
 //These variables are used in the ISR
@@ -43,12 +36,13 @@ char accelerationvalue[10];
 // RECEIVER CODE
 float voltage;
 char channel;
-int min = MIN;
+int min;
 unsigned char moveback = 0b000000010;
 unsigned char moveforward = 0b00000001;
 unsigned char turn180 = 0b00000011;
 unsigned char parallel = 0b00000100;
 unsigned char val;
+float volts0,volts1;
 void wait_bit_time(void);
 void wait_one_and_half_bit_time(void);
 unsigned int GetADC(unsigned char channel);
@@ -186,7 +180,7 @@ unsigned int GetADC(unsigned char channel)
 		
 	return adc;
 }
-//get the volatage from ch0 in ADC and change it accordingly.
+/*//get the volatage from ch0 in ADC and change it accordingly.
 float findvoltage0( void )
 {
 	return (float) (GetADC(0)*(UP/DOWN));
@@ -196,6 +190,7 @@ float findvoltage1( void )
 {
 	return (float) (GetADC(1)*(UP/DOWN));
 }
+*/
 //RECEIVER CODE END
 
 void millisecdelay(float millisecondstodelay,char stopautomatically,char batterydependent)
@@ -549,7 +544,7 @@ void buttoncommands(void)
 		parallelpark1();
 	 	    	
 }
-void fixposition(float volts0,float volts1,float difference)
+void fixposition(float difference)
 {
 	if(difference<20)//if pretty much facing the remote
 	{	if(volts0>distance+ERROR)//if too close
@@ -585,7 +580,7 @@ void fixposition(float volts0,float volts1,float difference)
 
 void main (void)
 {
-	float voltageleft,voltageright,difference;
+	float difference;
 	printf("\x1B[2J");//clears screen
 	printf( "Project 2 Motor Control Running...\n" );
 	TR0=1;
@@ -594,20 +589,20 @@ void main (void)
 
 	while(1)
 	{
-		voltageleft = GetADC(0);
-		voltageright = GetADC(1);
+		volts0 = GetADC(0);
+		volts1 = GetADC(1);
 		min = 0;
-		if (voltageleft <= min )
+		if (volts0 <= min )
 		{	rx_byte(min);
 			buttoncommands();
 		}
 
-		if(voltageleft>voltageright)
-			difference = (voltageleft - voltageright)/(voltageright+voltageleft);
+		if(volts0>volts1)
+			difference = (volts0 - volts1)/(volts1+volts0);
 		else
-			difference = (voltageright - voltageleft)/(voltageright+voltageleft);
+			difference = (volts1 - volts0)/(volts1+volts0);
 
-		fixposition(voltageleft,voltageright,difference);
+		fixposition(difference);
 
 
 
