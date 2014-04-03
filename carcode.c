@@ -179,17 +179,7 @@ unsigned int GetADC(unsigned char channel)
 		
 	return adc;
 }
-/*//get the volatage from ch0 in ADC and change it accordingly.
-float findvoltage0( void )
-{
-	return (float) (GetADC(0)*(UP/DOWN));
-}	
-//gets the volatage from ch1 in ADC and changes accordingly	
-float findvoltage1( void )
-{
-	return (float) (GetADC(1)*(UP/DOWN));
-}
-*/
+
 //RECEIVER CODE END
 
 void millisecdelay(float millisecondstodelay,char stopautomatically,char batterydependent)
